@@ -39,6 +39,7 @@ def download(url, out_dir):
         'outtmpl': f'{out_dir}/%(title).80s.%(ext)s',
         'progress_hooks': [hook],
         'logger': _Logger(),
+        'quiet': True,
         'windowsfilenames': True,
     }
 
@@ -68,8 +69,11 @@ def download(url, out_dir):
                         result['path'] = ydl.prepare_filename(info)
             return result['path']  # success
         except Exception as e:
+            # Hook already fired → file is on disk. yt-dlp raised during post-processing
+            # or context-manager cleanup — treat the download as successful.
+            if result['path']:
+                return result['path']
             last_error = e
-            # If it's not a cookie-related error, no point trying other browsers
             err_str = str(e).lower()
             if 'cookies' not in err_str and 'sign in' not in err_str and 'bot' not in err_str and browser is None:
                 raise
