@@ -189,11 +189,8 @@ ipcMain.handle('download-video', (event, { url, outDir }) => {
         if (line.startsWith('ERROR:')) lastPyError = line.replace('ERROR:', '').trim()
       })
     })
-    py.stderr.on('data', (data) => {
-      const msg = data.toString('utf8').trim()
-      const isCookieNoise = /could not copy|cookie.?database|7271/i.test(msg)
-      if (msg && !isCookieNoise) event.sender.send('download-progress', 'LOG:' + msg)
-    })
+    // yt-dlp writes cookie/DPAPI warnings to stderr that are harmless — all real
+    // errors are caught in download_video.py and sent to stdout as ERROR: lines.
     py.on('error', reject)
     py.on('close', (code) => {
       if (code !== 0) reject(new Error(lastPyError || `Download failed (exit ${code})`))
