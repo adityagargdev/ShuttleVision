@@ -10,7 +10,9 @@ export default function UploadPanel({
   const [ytUrl, setYtUrl]           = useState('')
   const [downloading, setDownloading] = useState(false)
   const [dlProgress, setDlProgress]   = useState(null) // 0-100 or null
-  const [dlError, setDlError]         = useState('')
+  const [dlStatus, setDlStatus]       = useState('')   // info messages while downloading
+  const [dlError, setDlError]         = useState('')   // real errors only
+  const [dlDone, setDlDone]           = useState(false)
 
   const analyzing = status === 'analyzing'
   const ready = videoPath && outDir && !analyzing && !downloading
@@ -19,6 +21,8 @@ export default function UploadPanel({
     if (!ytUrl.trim() || !outDir) return
     setDownloading(true)
     setDlError('')
+    setDlStatus('')
+    setDlDone(false)
     setDlProgress(0)
 
     const unsub = window.api.onDownloadProgress((msg) => {
@@ -26,9 +30,9 @@ export default function UploadPanel({
         const pct = Number(msg.replace('PROGRESS:', ''))
         if (!isNaN(pct)) setDlProgress(pct)
       } else if (msg.startsWith('INFO:')) {
-        setDlError(msg.replace('INFO:', ''))
+        setDlStatus(msg.replace('INFO:', '').trim())
       } else if (msg.startsWith('LOG:') || msg.startsWith('ERROR:')) {
-        setDlError(msg.replace(/^(LOG:|ERROR:)/, ''))
+        setDlError(msg.replace(/^(LOG:|ERROR:)/, '').trim())
       }
     })
 
@@ -37,9 +41,13 @@ export default function UploadPanel({
       setVideoPath(path)
       setYtUrl('')
       setDlProgress(null)
+      setDlStatus('')
+      setDlDone(true)
+      setTimeout(() => setDlDone(false), 3000)
     } catch (e) {
       setDlError(e.message || 'Download failed')
       setDlProgress(null)
+      setDlStatus('')
     } finally {
       unsub()
       setDownloading(false)
@@ -97,10 +105,13 @@ export default function UploadPanel({
               </>
             ) : (
               <p className="text-[10px] text-muted animate-pulse">
-                {dlError || 'Fetching video info…'}
+                {dlStatus || 'Fetching video info…'}
               </p>
             )}
           </div>
+        )}
+        {!downloading && dlDone && (
+          <p className="text-[10px] text-green-400">✓ Downloaded successfully</p>
         )}
         {!downloading && dlError && (
           <p className="text-[10px] text-red-400">{dlError}</p>
