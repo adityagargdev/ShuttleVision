@@ -4,21 +4,6 @@ import sys
 import yt_dlp
 
 
-class _Logger:
-    """Suppress yt-dlp cookie-DB copy errors (Chrome/Edge locked on Windows).
-    These are harmless — yt-dlp falls back to the next browser automatically."""
-    _SKIP = ('could not copy', 'cookie database', 'cookiejar', '7271')
-
-    def debug(self, msg): pass
-    def info(self, msg): pass
-    def warning(self, msg):
-        if not any(p in msg.lower() for p in self._SKIP):
-            sys.stderr.write(f"WARN:{msg}\n"); sys.stderr.flush()
-    def error(self, msg):
-        if not any(p in msg.lower() for p in self._SKIP):
-            sys.stderr.write(f"{msg}\n"); sys.stderr.flush()
-
-
 def download(url, out_dir):
     result = {'path': None}
 
@@ -38,14 +23,14 @@ def download(url, out_dir):
         'format': '22/18/best[ext=mp4]/best',
         'outtmpl': f'{out_dir}/%(title).80s.%(ext)s',
         'progress_hooks': [hook],
-        'logger': _Logger(),
         'quiet': True,
+        'no_warnings': True,
         'windowsfilenames': True,
     }
 
-    # Firefox first — most reliable on Windows when Chrome/Edge are open (no DB lock).
-    # Fall back to Edge, Chrome, then no cookies.
-    browsers = ['firefox', 'edge', 'chrome', None]
+    # Try with browser cookies first to bypass YouTube bot detection.
+    # Edge is the Windows default; fall back to Chrome, Firefox, then no cookies.
+    browsers = ['edge', 'chrome', 'firefox', None]
     last_error = None
 
     for browser in browsers:
@@ -69,10 +54,6 @@ def download(url, out_dir):
                         result['path'] = ydl.prepare_filename(info)
             return result['path']  # success
         except Exception as e:
-            # Hook already fired → file is on disk. yt-dlp raised during post-processing
-            # or context-manager cleanup — treat the download as successful.
-            if result['path']:
-                return result['path']
             last_error = e
             err_str = str(e).lower()
             if 'cookies' not in err_str and 'sign in' not in err_str and 'bot' not in err_str and browser is None:

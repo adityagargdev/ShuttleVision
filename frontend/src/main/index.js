@@ -189,7 +189,8 @@ ipcMain.handle('download-video', (event, { url, outDir }) => {
     })
     py.stderr.on('data', (data) => {
       const msg = data.toString().trim()
-      if (msg) event.sender.send('download-progress', 'LOG:' + msg)
+      const isCookieNoise = /could not copy|cookie.?database|7271/i.test(msg)
+      if (msg && !isCookieNoise) event.sender.send('download-progress', 'LOG:' + msg)
     })
     py.on('error', reject)
     py.on('close', (code) => {
