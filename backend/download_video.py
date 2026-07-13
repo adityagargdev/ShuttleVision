@@ -32,6 +32,10 @@ def download(url, out_dir):
     # Edge is the Windows default; fall back to Chrome, Firefox, then no cookies.
     browsers = ['edge', 'chrome', 'firefox', None]
     last_error = None
+    any_path = None  # tracks any path set by the hook across all attempts
+
+    # Errors that mean "this browser failed, try the next one"
+    _skip = ('cookies', 'sign in', 'bot', 'dpapi', 'decrypt', 'could not copy')
 
     for browser in browsers:
         opts = {**base_opts}
@@ -52,16 +56,18 @@ def download(url, out_dir):
                         result['path'] = rdl[0].get('filepath') or ydl.prepare_filename(info)
                     else:
                         result['path'] = ydl.prepare_filename(info)
-            return result['path']  # success
+            return result['path']  # clean success
         except Exception as e:
-            if result['path']:          # hook fired → file is on disk, yt-dlp raised during cleanup
-                return result['path']
+            if result['path']:       # hook fired — file is on disk
+                any_path = result['path']
             last_error = e
             err_str = str(e).lower()
-            if 'cookies' not in err_str and 'sign in' not in err_str and 'bot' not in err_str and browser is None:
+            if not any(k in err_str for k in _skip) and browser is None:
                 raise
             continue
 
+    if any_path:                     # a browser downloaded it before raising
+        return any_path
     raise last_error
 
 
