@@ -181,9 +181,11 @@ ipcMain.handle('download-video', (event, { url, outDir }) => {
   return new Promise((resolve, reject) => {
     const py = spawnPy([join(BACKEND, 'download_video.py'), '--url', url, '--out-dir', outDir])
     let lastPyError = ''
+    const isCookieNoise = (s) => /could not copy|cookie.?database|dpapi|decrypt/i.test(s)
 
     py.stdout.on('data', (data) => {
       data.toString('utf8').split('\n').filter(Boolean).forEach(line => {
+        if (isCookieNoise(line)) return          // yt-dlp writes these to stdout too; drop them
         event.sender.send('download-progress', line)
         if (line.startsWith('DONE:')) resolve(line.replace('DONE:', '').trim())
         if (line.startsWith('ERROR:')) lastPyError = line.replace('ERROR:', '').trim()

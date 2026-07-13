@@ -42,6 +42,7 @@ export default function UploadPanel({
       setYtUrl('')
       setDlProgress(null)
       setDlStatus('')
+      setDlError('')
       setDlDone(true)
       setTimeout(() => setDlDone(false), 3000)
     } catch (e) {
