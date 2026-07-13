@@ -54,6 +54,8 @@ def download(url, out_dir):
                         result['path'] = ydl.prepare_filename(info)
             return result['path']  # success
         except Exception as e:
+            if result['path']:          # hook fired → file is on disk, yt-dlp raised during cleanup
+                return result['path']
             last_error = e
             err_str = str(e).lower()
             if 'cookies' not in err_str and 'sign in' not in err_str and 'bot' not in err_str and browser is None:
