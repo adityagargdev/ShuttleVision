@@ -179,22 +179,24 @@ ipcMain.handle('load-analysis', (_, jsonPath) => {
 
 ipcMain.handle('download-video', (event, { url, outDir }) => {
   return new Promise((resolve, reject) => {
-    const py = spawn(PYTHON, [join(BACKEND, 'download_video.py'), '--url', url, '--out-dir', outDir])
+    const py = spawnPy([join(BACKEND, 'download_video.py'), '--url', url, '--out-dir', outDir])
+    let lastPyError = ''
 
     py.stdout.on('data', (data) => {
-      data.toString().split('\n').filter(Boolean).forEach(line => {
+      data.toString('utf8').split('\n').filter(Boolean).forEach(line => {
         event.sender.send('download-progress', line)
         if (line.startsWith('DONE:')) resolve(line.replace('DONE:', '').trim())
+        if (line.startsWith('ERROR:')) lastPyError = line.replace('ERROR:', '').trim()
       })
     })
     py.stderr.on('data', (data) => {
-      const msg = data.toString().trim()
+      const msg = data.toString('utf8').trim()
       const isCookieNoise = /could not copy|cookie.?database|7271/i.test(msg)
       if (msg && !isCookieNoise) event.sender.send('download-progress', 'LOG:' + msg)
     })
     py.on('error', reject)
     py.on('close', (code) => {
-      if (code !== 0) reject(new Error(`Download failed (exit ${code})`))
+      if (code !== 0) reject(new Error(lastPyError || `Download failed (exit ${code})`))
     })
   })
 })
