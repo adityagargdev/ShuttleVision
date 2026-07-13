@@ -1,0 +1,48 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+backend/dist/
+backend/build/
+*.spec.bak
+
+# Node / Electron
+frontend/node_modules/
+frontend/out/
+frontend/dist-release/
+
+# Build artifacts
+*.exe
+*.dmg
+*.AppImage
+
+# Downloads / test assets (large files — keep the folder, exclude everything inside)
+downloads/*.mp4
+downloads/*.avi
+downloads/*.mov
+downloads/*.mkv
+downloads/analysis.json
+downloads/*.png
+downloads/*.csv
+downloads/*.jpg
+
+# ML models (large, download separately)
+*.pt
+*.pth
+*.onnx
+
+# Editor / OS
+.vscode/settings.json
+.idea/
+*.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temp icon generation script
+generate_icon.py
